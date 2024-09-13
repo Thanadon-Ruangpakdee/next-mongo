@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export default function Home() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -10,18 +10,18 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState([]);
 
-  async function fetchProducts() {
+  // Memoize the functions
+  const fetchProducts = useCallback(async () => {
     const data = await fetch(`${API_BASE}/product`);
-    // const data = await fetch(`http://localhost:3000/product`);
     const p = await data.json();
     setProducts(p);
-  }
+  }, [API_BASE]);
 
-  async function fetchCategory() {
+  const fetchCategory = useCallback(async () => {
     const data = await fetch(`${API_BASE}/category`);
     const c = await data.json();
     setCategory(c);
-  }
+  }, [API_BASE]);
 
   const createProduct = (data) => {
     fetch(`${API_BASE}/product`, {
@@ -35,17 +35,17 @@ export default function Home() {
 
   const deleteById = (id) => async () => {
     if (!confirm("Are you sure?")) return;
-    
+
     await fetch(`${API_BASE}/product/${id}`, {
       method: "DELETE",
     });
     fetchProducts();
-  }
+  };
 
   useEffect(() => {
     fetchCategory();
     fetchProducts();
-  }, []);
+  }, [fetchCategory, fetchProducts]); // Add missing dependencies
 
   return (
     <div className="flex flex-row gap-4">
@@ -81,7 +81,7 @@ export default function Home() {
             <div>Price:</div>
             <div>
               <input
-                name="name"
+                name="price"
                 type="number"
                 {...register("price", { required: true })}
                 className="border border-black w-full"
@@ -112,16 +112,15 @@ export default function Home() {
       <div className="border m-4 bg-slate-300 flex-1 w-64">
         <h1 className="text-2xl">Products ({products.length})</h1>
         <ul className="list-disc ml-8">
-          {
-            products.map((p) => (
-              <li key={p._id}>
-                <button className="border border-black p-1/2" onClick={deleteById(p._id)}>❌</button>{' '}
-                <Link href={`/product/${p._id}`} className="font-bold">
-                  {p.name}
-                </Link>{" "}
-                - {p.description}
-              </li>
-            ))}
+          {products.map((p) => (
+            <li key={p._id}>
+              <button className="border border-black p-1/2" onClick={deleteById(p._id)}>❌</button>{' '}
+              <Link href={`/product/${p._id}`} className="font-bold">
+                {p.name}
+              </Link>{" "}
+              - {p.description}
+            </li>
+          ))}
         </ul>
       </div>
     </div>

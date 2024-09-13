@@ -1,29 +1,29 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
- 
+
 export default function Home() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-  console.log(process.env.NEXT_PUBLIC_API_URL)
- 
+  console.log(process.env.NEXT_PUBLIC_API_URL);
+
   const [categoryList, setCategoryList] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const { register, handleSubmit, reset } = useForm();
- 
-  async function fetchCategory() {
+
+  // Memoize fetchCategory
+  const fetchCategory = useCallback(async () => {
     const data = await fetch(`${API_BASE}/category`);
     const c = await data.json();
     setCategoryList(c);
-  }
- 
+  }, [API_BASE]);
+
   useEffect(() => {
     fetchCategory();
-  }, []);
- 
+  }, [fetchCategory]); // Add fetchCategory to dependencies
+
   function handleCategoryFormSubmit(data) {
     if (editMode) {
-      // Updating a category
       fetch(`${API_BASE}/category`, {
         method: "PUT",
         headers: {
@@ -32,12 +32,11 @@ export default function Home() {
         body: JSON.stringify(data),
       }).then(() => {
         stopEditMode();
-        fetchCategory()
+        fetchCategory();
       });
-      return
+      return;
     }
- 
-    // Creating a new category
+
     fetch(`${API_BASE}/category`, {
       method: "POST",
       headers: {
@@ -45,23 +44,21 @@ export default function Home() {
       },
       body: JSON.stringify(data),
     }).then(() => fetchCategory());
- 
   }
- 
+
   function startEditMode(category) {
-    // console.log(category)
     reset(category);
     setEditMode(true);
   }
- 
+
   function stopEditMode() {
     reset({
       name: '',
       order: ''
-    })
-    setEditMode(false)
+    });
+    setEditMode(false);
   }
- 
+
   return (
     <main>
       <form onSubmit={handleSubmit(handleCategoryFormSubmit)}>
@@ -75,7 +72,7 @@ export default function Home() {
               className="border border-gray-600 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
             />
           </div>
- 
+
           <div>Order:</div>
           <div>
             <input
@@ -85,7 +82,7 @@ export default function Home() {
               className="border border-gray-600 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
             />
           </div>
- 
+
           <div className="col-span-2 text-right">
             {editMode ?
               <>
@@ -93,7 +90,6 @@ export default function Home() {
                   type="submit"
                   className="italic bg-blue-800 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                   value="Update" />
- 
                 {' '}
                 <button
                   onClick={() => stopEditMode()}
