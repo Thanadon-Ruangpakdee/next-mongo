@@ -5,3 +5,6 @@ export async function GET(request, { params }) {
     const category = await Category.findById(id)
     return Response.json(category);
 }
+
+
+
